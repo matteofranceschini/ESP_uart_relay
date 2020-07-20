@@ -24,6 +24,21 @@ logger:
 time:
   - platform: homeassistant
     id: homeassistant_time
+  - platform: sntp
+    on_time:
+      # Every 5 minutes
+      - seconds: 0
+        minutes: /5
+        then:
+            - if:
+                condition: 
+                  switch.is_on: r_finestre
+                then:
+                  - uart.write: [0xA0, 0x01, 0x00, 0xA1]
+                  - logger.log: "Switch refreshed with ON state"
+                else:
+                  - logger.log: "Switch refreshed with OFF state"
+                  - uart.write: [0xA0, 0x01, 0x01, 0xA2]
 uart:
   rx_pin: RX 
   tx_pin: TX 
@@ -36,11 +51,13 @@ switch:
   - platform: template
     name: ${data_intro} relay finestre
     id: r_finestre
+    restore_state: true
     turn_on_action:
-      - uart.write: [0xA0, 0x01, 0x01, 0xA2]
-    turn_off_action:
       - uart.write: [0xA0, 0x01, 0x00, 0xA1]
+    turn_off_action:
+      - uart.write: [0xA0, 0x01, 0x01, 0xA2]
     optimistic: true
+    assumed_state: true
 # Enable Home Assistant API
 api:
      password: !secret api_password
